@@ -27,6 +27,7 @@ import logging
 
 import mimetypes
 from comfy.cli_args import args
+from comfy.deploy_environment import get_deploy_environment
 import comfy.utils
 import comfy.model_management
 from comfy_api import feature_flags
@@ -690,6 +691,7 @@ class PromptServer():
                     "python_version": sys.version,
                     "pytorch_version": comfy.model_management.torch_version,
                     "embedded_python": os.path.split(os.path.split(sys.executable)[0])[1] == "python_embeded",
+                    "deploy_environment": get_deploy_environment(),
                     "argv": sys.argv
                 },
                 "devices": device_entries
@@ -971,6 +973,11 @@ class PromptServer():
 
                 if "client_id" in json_data:
                     extra_data["client_id"] = json_data["client_id"]
+
+                if "comfy_usage_source" not in extra_data:
+                    usage_source = request.headers.get("Comfy-Usage-Source")
+                    if usage_source:
+                        extra_data["comfy_usage_source"] = usage_source
                 if valid[0]:
                     outputs_to_execute = valid[2]
                     sensitive = {}
