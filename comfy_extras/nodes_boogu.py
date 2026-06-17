@@ -51,9 +51,9 @@ class TextEncodeBooguEdit(io.ComfyNode):
                 continue
             samples = image.movedim(-1, 1)
 
-            # Vision tower input: smart-resize is applied internally by the Qwen3-VL
-            # image processor; cap the pixel budget here to keep the vision token count sane.
-            total = int(1024 * 1024)
+            # Vision tower input: the reference caps the VLM image at 384x384
+            # (max_vlm_input_pil_pixels in pipeline_boogu.py) -> ~147 vision tokens.
+            total = int(384 * 384)
             scale_by = math.sqrt(total / (samples.shape[3] * samples.shape[2]))
             width = round(samples.shape[3] * scale_by)
             height = round(samples.shape[2] * scale_by)
