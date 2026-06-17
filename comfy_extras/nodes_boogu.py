@@ -26,10 +26,16 @@ class TextEncodeBooguEdit(io.ComfyNode):
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("prompt", multiline=True, dynamic_prompts=True),
-                io.Vae.Input("vae", optional=True),
-                io.Image.Input("image1", optional=True),
-                io.Image.Input("image2", optional=True),
-                io.Image.Input("image3", optional=True),
+                io.Vae.Input("vae"),
+                io.Autogrow.Input(
+                    "images",
+                    template=io.Autogrow.TemplateNames(
+                        io.Image.Input("image"),
+                        names=[f"image_{i}" for i in range(1, 17)],
+                        min=1,
+                    ),
+                    tooltip="Reference image(s) to edit. Boogu focuses on one reference per sample; more are allowed.",
+                ),
             ],
             outputs=[
                 io.Conditioning.Output(display_name="positive"),
@@ -38,11 +44,13 @@ class TextEncodeBooguEdit(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, clip, prompt, vae=None, image1=None, image2=None, image3=None) -> io.NodeOutput:
+    def execute(cls, clip, prompt, vae=None, images: io.Autogrow.Type = None) -> io.NodeOutput:
         ref_latents = []
         images_vl = []
 
-        for image in (image1, image2, image3):
+        images = images or {}
+        for name in sorted(images, key=lambda n: int(n.rsplit("_", 1)[-1])):
+            image = images[name]
             if image is None:
                 continue
             samples = image.movedim(-1, 1)
